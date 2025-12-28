@@ -1,7 +1,6 @@
--- Universal Sideways Jumps Script - ULTIMATE BROKEN MODE v2
--- NO jump duration, NO tween, pure instant CFrame teleport
--- No checks, no cooldowns, maximum speed and chaos
--- Title changed to "Super's Sideways jumps"
+-- Universal Sideways Jumps Script - ULTIMATE BROKEN MODE v4 (AUTO DODGE REMOVED)
+-- All auto-dodge functionality has been completely removed
+-- Kept: manual jumps, auto-dash (left-right spam), full GUI, trail, etc.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,23 +11,17 @@ local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local Humanoid = Character:WaitForChild("Humanoid")
 
--- SETTINGS - MAXIMUM BROKEN
+-- SETTINGS (auto-dodge related settings removed)
 local DEFAULT_JUMP_DIST    = 50
 local MIN_JUMP_DIST        = 1
-local DEFAULT_DASH_INTERVAL = 0.00    -- Zero delay = as fast as Heartbeat
+local DEFAULT_DASH_INTERVAL = 0.00
 local MIN_DASH_INTERVAL    = 0
-local MAX_DASH_INTERVAL    = 0.03     -- Still insane
-
-local isEnabled = true
-local isAutoDashing = true            -- Starts ON
-local isAutoDodgeEnabled = true
-local nextDashDirection = "left"
-local autoDashInterval = DEFAULT_DASH_INTERVAL
-local lastHealth = Humanoid.Health
+local MAX_DASH_INTERVAL    = 0.03
 local minimized = false
 local DISTANCE_STEP = 25
+local jumpDist = DEFAULT_JUMP_DIST
 
--- GUI (red chaos theme)
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "UltimateBrokenJumps"
 ScreenGui.ResetOnSpawn = false
@@ -41,7 +34,6 @@ Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
--- Title - Changed to "Super's Sideways jumps"
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0.8, 0, 0, 40)
 Title.Position = UDim2.new(0.05, 0, 0, 5)
@@ -53,7 +45,6 @@ Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Frame
 
--- Minimize Button
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
 MinimizeButton.Position = UDim2.new(1, -40, 0, 5)
@@ -64,7 +55,6 @@ MinimizeButton.TextSize = 24
 MinimizeButton.Font = Enum.Font.SourceSansBold
 MinimizeButton.Parent = Frame
 
--- Toggles
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.45, 0, 0, 50)
 ToggleButton.Position = UDim2.new(0.05, 0, 0.15, 0)
@@ -85,17 +75,6 @@ AutoDashButton.TextSize = 18
 AutoDashButton.Font = Enum.Font.SourceSansBold
 AutoDashButton.Parent = Frame
 
-local AutoDodgeButton = Instance.new("TextButton")
-AutoDodgeButton.Size = UDim2.new(0.9, 0, 0, 50)
-AutoDodgeButton.Position = UDim2.new(0.05, 0, 0.28, 0)
-AutoDodgeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-AutoDodgeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoDodgeButton.Text = "AUTO DODGE: ON"
-AutoDodgeButton.TextSize = 18
-AutoDodgeButton.Font = Enum.Font.SourceSansBold
-AutoDodgeButton.Parent = Frame
-
--- Jump Buttons
 local LeftButton = Instance.new("TextButton")
 LeftButton.Size = UDim2.new(0.45, 0, 0, 80)
 LeftButton.Position = UDim2.new(0.05, 0, 0.75, 0)
@@ -116,7 +95,6 @@ RightButton.TextSize = 28
 RightButton.Font = Enum.Font.SourceSansBold
 RightButton.Parent = Frame
 
--- Distance Controls
 local DistanceLabel = Instance.new("TextLabel")
 DistanceLabel.Size = UDim2.new(0.9, 0, 0, 20)
 DistanceLabel.Position = UDim2.new(0.05, 0, 0.42, 0)
@@ -145,7 +123,6 @@ PlusDist.Text = "+"
 PlusDist.TextSize = 22
 PlusDist.Parent = Frame
 
--- Speed Controls
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Size = UDim2.new(0.9, 0, 0, 20)
 SpeedLabel.Position = UDim2.new(0.05, 0, 0.58, 0)
@@ -174,7 +151,7 @@ PlusSpeed.Text = "+"
 PlusSpeed.TextSize = 22
 PlusSpeed.Parent = Frame
 
--- Trail (very visible)
+-- Trail
 local trail
 local function createTrail()
     if trail then trail:Destroy() end
@@ -215,7 +192,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Minimize / Maximize
+-- Minimize
 MinimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
@@ -246,14 +223,7 @@ AutoDashButton.MouseButton1Click:Connect(function()
     AutoDashButton.Text = isAutoDashing and "AUTO DASH: ON" or "AUTO DASH: OFF"
 end)
 
-AutoDodgeButton.MouseButton1Click:Connect(function()
-    isAutoDodgeEnabled = not isAutoDodgeEnabled
-    AutoDodgeButton.BackgroundColor3 = isAutoDodgeEnabled and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(80, 80, 80)
-    AutoDodgeButton.Text = isAutoDodgeEnabled and "AUTO DODGE: ON" or "AUTO DODGE: OFF"
-end)
-
 -- Distance
-local jumpDist = DEFAULT_JUMP_DIST
 local function updateDistanceLabel()
     DistanceLabel.Text = "Distance: " .. jumpDist .. " studs"
 end
@@ -286,7 +256,7 @@ PlusSpeed.MouseButton1Click:Connect(function()
 end)
 updateSpeedLabel()
 
--- INSTANT JUMP - NO DURATION, NO TWEEN
+-- INSTANT JUMP
 local function performJump(direction)
     if not isEnabled then return end
 
@@ -295,7 +265,6 @@ local function performJump(direction)
     local dir = direction == "left" and -right or right
     local targetCFrame = HumanoidRootPart.CFrame + (dir * jumpDist)
 
-    -- Pure instant teleport
     HumanoidRootPart.CFrame = targetCFrame
 
     if trail then 
@@ -304,27 +273,11 @@ local function performJump(direction)
     end
 end
 
--- Auto Dash - runs every Heartbeat (max speed)
+-- Auto Dash
 RunService.Heartbeat:Connect(function()
     if not isEnabled or not isAutoDashing then return end
     performJump(nextDashDirection)
     nextDashDirection = nextDashDirection == "left" and "right" or "left"
-    -- No wait() needed - Heartbeat is ~60 times per second
-    -- task.wait(autoDashInterval)  -- uncomment if you want controllable speed
-end)
-
--- Auto Dodge - triple spam on damage
-RunService.Heartbeat:Connect(function()
-    if not isEnabled or not isAutoDodgeEnabled then return end
-
-    local currentHealth = Humanoid.Health
-    if currentHealth < lastHealth and currentHealth > 0 then
-        print("DAMAGE DETECTED - SPAMMING DODGE!")
-        for i = 1, 5 do  -- 5 instant dodges per hit
-            performJump(math.random() > 0.5 and "left" or "right")
-        end
-    end
-    lastHealth = currentHealth
 end)
 
 -- Manual buttons
@@ -336,11 +289,8 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
     Character = newChar
     HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
     Humanoid = newChar:WaitForChild("Humanoid")
-    lastHealth = Humanoid.Health
     createTrail()
 end)
 
-print("ULTIMATE BROKEN MODE LOADED!")
-print("Zero jump duration - pure instant CFrame teleport")
-print("Auto-dash runs at max Heartbeat speed")
-print("Hold on tight - this is maximum chaos!")
+print("ULTIMATE BROKEN MODE v4 LOADED - AUTO DODGE REMOVED")
+print("Only manual jumps + auto left-right dash remain")
